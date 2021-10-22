@@ -1,0 +1,10 @@
+{
+"data_type": "2d",
+"save_dir":"/home/sci/riddhishb/Documents/git-repos/ShapeworksPybind/NonLinearExp/FemurTest/",
+"learning_rate": 0.000010,
+"weight_decay": 0.00005,
+"num_epochs": 200,
+"batch_size":5,
+"model_type":"baseline",
+"lin_combo": [-1]
+}
