@@ -2,33 +2,77 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
+def prediction_single_viz(model, all_data, ids, lc_combo, save_file, device):
+	
+	out_data = np.zeros(all_data.shape)
+	trlen = all_data.shape[0]
+	for i in range(trlen):
+		cur_data = all_data[i, :]
+		tmp = torch.from_numpy(cur_data).to(device)
+		outpttmp = torch.from_numpy(np.zeros(cur_data.shape)).to(device).float()
+		indiff = torch.from_numpy(np.zeros(cur_data.shape)).to(device).float()
+		indiff = tmp
+		for j, fct in enumerate(lc_combo):
+			tmp2 = torch.from_numpy(all_data[ids[j], :]).to(device)
+			indiff = indiff + fct*tmp2
+
+		outdiff = model(indiff.float())
+		outpttmp = outdiff
+		for j, fct in enumerate(lc_combo):
+			tmp2 = torch.from_numpy(all_data[ids[j], :]).to(device)
+			outpttmp = outpttmp - fct*tmp2.float()
+		
+		out_data[i, :] = outpttmp.detach().cpu().numpy()
+	
+	# now plot the data
+	fig = plt.figure()
+	ax = fig.add_subplot(121)
+	colors = plt.cm.coolwarm(np.linspace(0, 1, 100))
+	ax.scatter(all_data[:, 0], all_data[:, 1], color=colors)
+	ax.scatter(all_data[ids[0], 0], all_data[ids[0], 1], color='k')
+	ax.set_title('GT Validation')
+	ax = fig.add_subplot(122)
+	ax.scatter(out_data[:, 0], out_data[:, 1], color=colors)
+	ax.set_title('Reconstructed Validation')
+	plt.savefig(save_file)
+
+	plt.clf()
+	
 
 def perdictions(model, data_to_infer, train_data, lc_combo, device):
 
-	N = 20 # number of references to compare againts and average
 	out_data = np.zeros(data_to_infer.shape)
 	trlen = train_data.shape[0]
 	for i in range(data_to_infer.shape[0]):
 		cur_data = data_to_infer[i, :]
-		
-		if lc_combo > 0:
-			for j in range(N):
-				ids = torch.randperm(trlen)
-				for k in range(len(lc_combo)):
-					fct = lc_combo[k]
-					cur_data = cur_data + fct*train_data[ids[k], :]
-				
-				tmp = model(torch.from_numpy(cur_data).to(device).float())
-				tmp = tmp.detach().cpu().numpy()
-				for k in range(len(lc_combo)):
-					fct = lc_combo[k]
-					tmp = tmp - fct*train_data[ids[k], :]
-				out_data[i, ...] += tmp
-			out_data[i, ...] = out_data[i, ...] / N
+		N = 1000
+		if len(lc_combo) > 0:
+			tmp = torch.from_numpy(cur_data).to(device)
+			outpttmp = torch.from_numpy(np.zeros(cur_data.shape)).to(device).float()
+			indiff = torch.from_numpy(np.zeros(cur_data.shape)).to(device).float()
+			count = 0
+			
+			rdids = np.random.choice(train_data.shape[0], [N, len(lc_combo)])
+			while count < N:
+				indiff = tmp
+				for j, fct in enumerate(lc_combo):
+					curid = rdids[count, j]
+					indiff = indiff + fct*torch.from_numpy(train_data[curid, :]).to(device)
 
+				outdiff = model(indiff.float())
+				for j, fct in enumerate(lc_combo):
+					curid = rdids[count, j]
+					outdiff = outdiff - fct*torch.from_numpy(train_data[curid, :]).to(device)
+				outpttmp += outdiff
+				count += 1
+
+			outpts = outpttmp / N 
+			out_data[i, :] = outpts.detach().cpu().numpy()
+			
 		else:
-			tmp = model(torch.from_numpy(cur_data).to(device).float())
-			out_data[i, ...] = tmp.detach().cpu().numpy()
+			tmp = torch.from_numpy(cur_data).to(device)
+			outpts = model(tmp.float())
+			out_data[i, :] = outpts.detach().cpu().numpy()
 	
 	return out_data
 
@@ -38,10 +82,10 @@ def reconstruction_errors_plot(in_data_train, in_data_val, out_data_train, out_d
 	dim = in_data_train.shape[1]
 	if dim == 3:
 		ax = fig.add_subplot(121, projection='3d')
-		ax.scatter(in_data_val[:, 0], in_data_val[:, 1], in_data_val[:, 2], color='r')
+		ax.scatter(in_data_val[:, 0], in_data_val[:, 1], in_data_val[:, 2], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_val.shape[0])))
 		ax.set_title('GT Validation')
 		ax = fig.add_subplot(122, projection='3d')
-		ax.scatter(out_data_val[:, 0], out_data_val[:, 1], out_data_val[:, 2], color='b')
+		ax.scatter(out_data_val[:, 0], out_data_val[:, 1], out_data_val[:, 2], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_val.shape[0])))
 		ax.set_title('Reconstructed Validation')
 		plt.savefig(save_dir + '/val_reconstruction.png')
 
@@ -49,20 +93,20 @@ def reconstruction_errors_plot(in_data_train, in_data_val, out_data_train, out_d
 
 		fig = plt.figure()
 		ax = fig.add_subplot(121, projection='3d')
-		ax.scatter(in_data_train[:, 0], in_data_train[:, 1], in_data_train[:, 2], color='r')
+		ax.scatter(in_data_train[:, 0], in_data_train[:, 1], in_data_train[:, 2], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_train.shape[0])))
 		ax.set_title('GT Training')
 		ax = fig.add_subplot(122, projection='3d')
-		ax.scatter(out_data_train[:, 0], out_data_train[:, 1], out_data_train[:, 2], color='b')
+		ax.scatter(out_data_train[:, 0], out_data_train[:, 1], out_data_train[:, 2], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_train.shape[0])))
 		ax.set_title('Reconstructed Training')
 		plt.savefig(save_dir + '/train_reconstruction.png')
 		plt.clf()
 	
 	if dim == 2:
 		ax = fig.add_subplot(121)
-		ax.scatter(in_data_val[:, 0], in_data_val[:, 1], color='r')
+		ax.scatter(in_data_val[:, 0], in_data_val[:, 1], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_val.shape[0])))
 		ax.set_title('GT Validation')
 		ax = fig.add_subplot(122)
-		ax.scatter(out_data_val[:, 0], out_data_val[:, 1], color='b')
+		ax.scatter(out_data_val[:, 0], out_data_val[:, 1], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_val.shape[0])))
 		ax.set_title('Reconstructed Validation')
 		plt.savefig(save_dir + '/val_reconstruction.png')
 
@@ -70,10 +114,10 @@ def reconstruction_errors_plot(in_data_train, in_data_val, out_data_train, out_d
 
 		fig = plt.figure()
 		ax = fig.add_subplot(121)
-		ax.scatter(in_data_train[:, 0], in_data_train[:, 1], color='r')
+		ax.scatter(in_data_train[:, 0], in_data_train[:, 1], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_train.shape[0])))
 		ax.set_title('GT Training')
 		ax = fig.add_subplot(122)
-		ax.scatter(out_data_train[:, 0], out_data_train[:, 1], color='b')
+		ax.scatter(out_data_train[:, 0], out_data_train[:, 1], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_train.shape[0])))
 		ax.set_title('Reconstructed Training')
 		plt.savefig(save_dir + '/train_reconstruction.png')
 		plt.clf()
@@ -85,7 +129,7 @@ def reconstruction_errors_plot(in_data_train, in_data_val, out_data_train, out_d
 	val_err_avg = np.sqrt(val_err.mean(1))
 
 	fig = plt.figure()
-	ax = fig.add_subplot(121)
+	ax = fig.add_subplot(111)
 	data_lists = {}
 	data_lists["train"] = (train_err_avg).tolist()
 	data_lists["validation"] = (val_err_avg).tolist()

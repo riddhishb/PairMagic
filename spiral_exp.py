@@ -55,15 +55,15 @@ def runFunction(config_file):
 	np.random.shuffle(idx)
 	trainidx = idx[:numtrain]
 	validx = idx[numtrain:]
-
+	
 	# create the dataloaders
 	batch_size = config['batch_size']
 	combfactors = config['lin_combo']
-	if config_file['model_type'] == "baseline":
+	if config['model_type'] == "baseline":
 		train_loader = dataloaders.data_model(inputData[trainidx, :], batch_size, "lccomb",  combfactors, train=True)
 		val_loader = dataloaders.data_model(inputData[validx, :], batch_size, "lccomb",  combfactors, train=False)
 	# TODO: add stuff for the mixup and other methods
-
+	
 	'''Load the model'''
 	
 	num_epochs = config['num_epochs']
@@ -123,7 +123,7 @@ def runFunction(config_file):
 		print("Epoch, Train Loss, Val Loss ", e, avg_train_loss, avg_val_loss)
 
 	torch.save(model, save_dir + '/final_model.pt')
-
+	
 	''' Model Evaluation and Inference '''
 	model.eval()
 
@@ -137,15 +137,26 @@ def runFunction(config_file):
 	plt.savefig(save_dir + '/lossplot.png')
 	plt.cla()
 
-	out_train_data = lc_infer.perdictions(model, inputData[trainidx, :], inputData[trainidx, :], combfactors, device)
-	out_val_data = lc_infer.perdictions(model, inputData[validx, :], inputData[trainidx, :], combfactors, device)
+	out_train_data = lc_infer.perdictions(model, inputData[trainidx, :], inputData, combfactors, device)
+	out_val_data = lc_infer.perdictions(model, inputData[validx, :], inputData, combfactors, device)
 	lc_infer.reconstruction_errors_plot(inputData[trainidx, :], inputData[validx, :], out_train_data, out_val_data, save_dir)
+	lc_infer.prediction_single_viz(model, inputData, [0], combfactors, save_dir + '/recons_0.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [10], combfactors, save_dir + '/recons_10.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [20], combfactors, save_dir + '/recons_20.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [30], combfactors, save_dir + '/recons_30.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [40], combfactors, save_dir + '/recons_40.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [50], combfactors, save_dir + '/recons_50.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [60], combfactors, save_dir + '/recons_60.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [70], combfactors, save_dir + '/recons_70.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [80], combfactors, save_dir + '/recons_80.png', device)
+	lc_infer.prediction_single_viz(model, inputData, [90], combfactors, save_dir + '/recons_90.png', device)
 
+	# lc_infer.prediction_single_viz(model, inputData, [80], combfactors, save_dir + '/recons_80.png', device)
 	#TODO: plot the latent space
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--config_file", type=str, dest="save_dir", help="path to config file for the parameters")
+    parser.add_argument("--config_file", type=str, dest="config_file", help="path to config file for the parameters")
     args = parser.parse_args()
     runFunction(**vars(args))
