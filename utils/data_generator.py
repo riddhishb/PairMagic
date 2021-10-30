@@ -3,6 +3,9 @@ Generator for toy dataset used for experiments
 '''
 import numpy as np
 
+from sklearn import manifold, datasets
+
+
 def spiral_2d(T, M, a=1, b=1):
 	
 	'''
@@ -40,3 +43,15 @@ def corkscrew_3d(T, M, a=1, b=6):
 	inputData[..., 1] = b*w*theta
 	inputData[..., 2] = (a + w*theta)*np.sin(w*theta)
 	return [inputData, theta]
+
+
+def swissroll_3d(N):
+	'''
+	Uses sklearn to construct swissroll
+	N = number fo samples
+	outputs - data matrix and color
+	'''
+	X, color = datasets.make_swiss_roll(n_samples=N)
+	return [X, color]
+	
+	

@@ -1,10 +1,13 @@
 {
-"data_type": "2d",
-"save_dir":"/home/sci/riddhishb/Documents/git-repos/ShapeworksPybind/NonLinearExp/FemurTest/",
-"learning_rate": 0.000010,
-"weight_decay": 0.00005,
-"num_epochs": 200,
-"batch_size":5,
+"data_type": "3d",
+"save_dir":"/home/sci/riddhishb/Documents/git-repos/PairMagic/Results/SwissRoll/BN1_baseline",
+"learning_rate": 0.0001,
+"weight_decay": 0.000005,
+"num_epochs": 15000,
+"batch_size":50,
 "model_type":"baseline",
-"lin_combo": [-1]
+"lin_combo": [],
+"bottleneck": 1,
+"noise":false,
+"noise_sig": 1
 }

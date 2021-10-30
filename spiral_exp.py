@@ -46,7 +46,8 @@ def runFunction(config_file):
 		[inputData, theta] = data_generator.spiral_2d(T=5, M=20)
 		dim = 2
 	else:
-		[inputData, theta] = data_generator.corkscrew_3d(T=5, M=20)
+		# [inputData, theta] = data_generator.corkscrew_3d(T=5, M=20)
+		[inputData, color] = data_generator.swissroll_3d(500)
 		dim = 3
 	
 	# setting up train validation split
@@ -58,11 +59,15 @@ def runFunction(config_file):
 	
 	# create the dataloaders
 	batch_size = config['batch_size']
-	combfactors = config['lin_combo']
+	
 	if config['model_type'] == "baseline":
+		combfactors = config['lin_combo']
 		train_loader = dataloaders.data_model(inputData[trainidx, :], batch_size, "lccomb",  combfactors, train=True)
 		val_loader = dataloaders.data_model(inputData[validx, :], batch_size, "lccomb",  combfactors, train=False)
-	# TODO: add stuff for the mixup and other methods
+	elif config['model_type'] == "mixup":
+		alpha = config['mixup_alpha']
+		train_loader = dataloaders.data_model(inputData[trainidx, :], batch_size, "mixup",  alpha, train=True)
+		val_loader = dataloaders.data_model(inputData[validx, :], batch_size, "mixup",  alpha, train=False)
 	
 	'''Load the model'''
 	
@@ -137,19 +142,23 @@ def runFunction(config_file):
 	plt.savefig(save_dir + '/lossplot.png')
 	plt.cla()
 
-	out_train_data = lc_infer.perdictions(model, inputData[trainidx, :], inputData, combfactors, device)
-	out_val_data = lc_infer.perdictions(model, inputData[validx, :], inputData, combfactors, device)
-	lc_infer.reconstruction_errors_plot(inputData[trainidx, :], inputData[validx, :], out_train_data, out_val_data, save_dir)
-	lc_infer.prediction_single_viz(model, inputData, [0], combfactors, save_dir + '/recons_0.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [10], combfactors, save_dir + '/recons_10.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [20], combfactors, save_dir + '/recons_20.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [30], combfactors, save_dir + '/recons_30.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [40], combfactors, save_dir + '/recons_40.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [50], combfactors, save_dir + '/recons_50.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [60], combfactors, save_dir + '/recons_60.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [70], combfactors, save_dir + '/recons_70.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [80], combfactors, save_dir + '/recons_80.png', device)
-	lc_infer.prediction_single_viz(model, inputData, [90], combfactors, save_dir + '/recons_90.png', device)
+	if config["model_type"] == "baseline":
+		out_data = lc_infer.perdictions(model, inputData, inputData, combfactors, device)
+		lc_infer.reconstruction_errors_plot(inputData, out_data, trainidx, validx, save_dir, color=color)
+		# lc_infer.prediction_single_viz(model, inputData, [0], combfactors, save_dir + '/recons_0.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [10], combfactors, save_dir + '/recons_10.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [20], combfactors, save_dir + '/recons_20.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [30], combfactors, save_dir + '/recons_30.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [40], combfactors, save_dir + '/recons_40.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [50], combfactors, save_dir + '/recons_50.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [60], combfactors, save_dir + '/recons_60.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [70], combfactors, save_dir + '/recons_70.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [80], combfactors, save_dir + '/recons_80.png', device)
+		# lc_infer.prediction_single_viz(model, inputData, [90], combfactors, save_dir + '/recons_90.png', device)
+	elif config["model_type"] == "mixup":
+		out_train_data = lc_infer.perdictions(model, inputData[trainidx, :], inputData, [], device)
+		out_val_data = lc_infer.perdictions(model, inputData[validx, :], inputData, [], device)
+		lc_infer.reconstruction_errors_plot(inputData[trainidx, :], inputData[validx, :], out_train_data, out_val_data, save_dir)
 
 	# lc_infer.prediction_single_viz(model, inputData, [80], combfactors, save_dir + '/recons_80.png', device)
 	#TODO: plot the latent space

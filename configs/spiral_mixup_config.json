@@ -1,0 +1,13 @@
+{
+	"data_type": "3d",
+	"save_dir":"/home/sci/riddhishb/Documents/git-repos/PairMagic/Results/3DSpiral/mixup_0.05/",
+	"learning_rate": 0.001,
+	"weight_decay": 0.00005,
+	"num_epochs": 12000,
+	"batch_size":20,
+	"model_type":"mixup",
+	"bottleneck": 1,
+	"noise":false,
+	"noise_sig": 1,
+	"mixup_alpha":0.05
+	}

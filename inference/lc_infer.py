@@ -27,7 +27,8 @@ def prediction_single_viz(model, all_data, ids, lc_combo, save_file, device):
 	# now plot the data
 	fig = plt.figure()
 	ax = fig.add_subplot(121)
-	colors = plt.cm.coolwarm(np.linspace(0, 1, 100))
+	import pdb; pdb.set_trace()
+	colors = plt.cm.coolwarm(np.linspace(0, 1, all_data.shape[0]))
 	ax.scatter(all_data[:, 0], all_data[:, 1], color=colors)
 	ax.scatter(all_data[ids[0], 0], all_data[ids[0], 1], color='k')
 	ax.set_title('GT Validation')
@@ -68,7 +69,7 @@ def perdictions(model, data_to_infer, train_data, lc_combo, device):
 
 			outpts = outpttmp / N 
 			out_data[i, :] = outpts.detach().cpu().numpy()
-			
+
 		else:
 			tmp = torch.from_numpy(cur_data).to(device)
 			outpts = model(tmp.float())
@@ -76,16 +77,30 @@ def perdictions(model, data_to_infer, train_data, lc_combo, device):
 	
 	return out_data
 
-def reconstruction_errors_plot(in_data_train, in_data_val, out_data_train, out_data_val, save_dir):
+def reconstruction_errors_plot(in_data, out_data, trainidx, validx, save_dir, color=[]):
 	
 	fig = plt.figure()
+	in_data_train = in_data[trainidx, :]
+	in_data_val = in_data[validx, :]
+	out_data_train = out_data[trainidx, :]
+	out_data_val = out_data[validx, :]
+	
+	if len(color) == 0:
+		color = np.linspace(0, 1, in_data.shape[0])
+		color_train = color[trainidx]
+		color_val = color[validx]
+	else:
+		color_train = color[trainidx]
+		color_val = color[validx]
+
 	dim = in_data_train.shape[1]
+
 	if dim == 3:
 		ax = fig.add_subplot(121, projection='3d')
-		ax.scatter(in_data_val[:, 0], in_data_val[:, 1], in_data_val[:, 2], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_val.shape[0])))
+		ax.scatter(in_data_val[:, 0], in_data_val[:, 1], in_data_val[:, 2], c=color_val, cmap=plt.cm.Spectral)
 		ax.set_title('GT Validation')
 		ax = fig.add_subplot(122, projection='3d')
-		ax.scatter(out_data_val[:, 0], out_data_val[:, 1], out_data_val[:, 2], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_val.shape[0])))
+		ax.scatter(out_data_val[:, 0], out_data_val[:, 1], out_data_val[:, 2], c=color_val, cmap=plt.cm.Spectral)
 		ax.set_title('Reconstructed Validation')
 		plt.savefig(save_dir + '/val_reconstruction.png')
 
@@ -93,20 +108,20 @@ def reconstruction_errors_plot(in_data_train, in_data_val, out_data_train, out_d
 
 		fig = plt.figure()
 		ax = fig.add_subplot(121, projection='3d')
-		ax.scatter(in_data_train[:, 0], in_data_train[:, 1], in_data_train[:, 2], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_train.shape[0])))
+		ax.scatter(in_data_train[:, 0], in_data_train[:, 1], in_data_train[:, 2], c=color_train, cmap=plt.cm.Spectral)
 		ax.set_title('GT Training')
 		ax = fig.add_subplot(122, projection='3d')
-		ax.scatter(out_data_train[:, 0], out_data_train[:, 1], out_data_train[:, 2], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_train.shape[0])))
+		ax.scatter(out_data_train[:, 0], out_data_train[:, 1], out_data_train[:, 2], c=color_train, cmap=plt.cm.Spectral)
 		ax.set_title('Reconstructed Training')
 		plt.savefig(save_dir + '/train_reconstruction.png')
 		plt.clf()
 	
 	if dim == 2:
 		ax = fig.add_subplot(121)
-		ax.scatter(in_data_val[:, 0], in_data_val[:, 1], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_val.shape[0])))
+		ax.scatter(in_data_val[:, 0], in_data_val[:, 1], color=color_val)
 		ax.set_title('GT Validation')
 		ax = fig.add_subplot(122)
-		ax.scatter(out_data_val[:, 0], out_data_val[:, 1], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_val.shape[0])))
+		ax.scatter(out_data_val[:, 0], out_data_val[:, 1], color=color_val)
 		ax.set_title('Reconstructed Validation')
 		plt.savefig(save_dir + '/val_reconstruction.png')
 
@@ -114,10 +129,10 @@ def reconstruction_errors_plot(in_data_train, in_data_val, out_data_train, out_d
 
 		fig = plt.figure()
 		ax = fig.add_subplot(121)
-		ax.scatter(in_data_train[:, 0], in_data_train[:, 1], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_train.shape[0])))
+		ax.scatter(in_data_train[:, 0], in_data_train[:, 1], color=color_train)
 		ax.set_title('GT Training')
 		ax = fig.add_subplot(122)
-		ax.scatter(out_data_train[:, 0], out_data_train[:, 1], color=plt.cm.coolwarm(np.linspace(0, 1, in_data_train.shape[0])))
+		ax.scatter(out_data_train[:, 0], out_data_train[:, 1], color=color_train)
 		ax.set_title('Reconstructed Training')
 		plt.savefig(save_dir + '/train_reconstruction.png')
 		plt.clf()
